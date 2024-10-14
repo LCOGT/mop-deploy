@@ -1,0 +1,8 @@
+name: Sync Output
+on:
+  pull_request:
+
+jobs:
+  sync-output:
+    uses: LCOGT/reusable-workflows/.github/workflows/sync-deploy-output.yaml@main
+    secrets: inherit

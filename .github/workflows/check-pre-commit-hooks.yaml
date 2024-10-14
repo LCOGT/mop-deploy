@@ -1,0 +1,10 @@
+name: Check pre-commit hooks
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  pre-commit-hooks:
+    uses: LCOGT/reusable-workflows/.github/workflows/check-pre-commit.yaml@main

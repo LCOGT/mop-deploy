@@ -1,0 +1,7 @@
+# This file is edited by a bot. Any changes may be overwritten.
+# Do not edit. Use a higher level Kustomization to make persistent changes.
+
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources: []

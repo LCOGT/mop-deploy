@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+metadata: # kpt-merge: /set-lco-karpenter-attrs
+  name: set-lco-karpenter-attrs
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    internal.kpt.dev/upstream-identifier: 'kustomize.config.k8s.io|Component|default|set-lco-karpenter-attrs'
+transformers:
+  - ./fn-starlark.yaml

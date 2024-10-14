@@ -1,0 +1,17 @@
+apiVersion: fn.kpt.dev/v1alpha1
+kind: ApplyReplacements
+metadata: # kpt-merge: /set-lco-karpenter-attrs
+  name: set-lco-karpenter-attrs
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    internal.kpt.dev/upstream-identifier: 'fn.kpt.dev|ApplyReplacements|default|set-lco-karpenter-attrs'
+replacements:
+  - source:
+      kind: ConfigMap
+      name: kptfile.kpt.dev
+      fieldPath: data.provisioner
+    targets:
+      - select:
+          kind: StarlarkRun
+        fieldPaths:
+          - params.provisioner

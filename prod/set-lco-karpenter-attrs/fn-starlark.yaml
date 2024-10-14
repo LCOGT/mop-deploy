@@ -1,0 +1,150 @@
+apiVersion: fn.kpt.dev/v1alpha1
+kind: StarlarkRun
+metadata: # kpt-merge: /set-lco-karpenter-attrs
+  name: set-lco-karpenter-attrs
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    config.kubernetes.io/function: |
+      container:
+        image: gcr.io/kpt-fn/starlark:v0.5.0
+    internal.kpt.dev/upstream-identifier: 'fn.kpt.dev|StarlarkRun|default|set-lco-karpenter-attrs'
+params:
+  provisioner: prod
+  fieldPaths:
+    - apiVersion: v1
+      kind: Pod
+      nodeSelectorTerms: ["spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "tolerations"]
+    - apiVersion: apps/v1
+      kind: Deployment
+      nodeSelectorTerms: ["spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "template", "spec", "tolerations"]
+    - apiVersion: apps/v1
+      kind: StatefulSet
+      nodeSelectorTerms: ["spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "template", "spec", "tolerations"]
+    - apiVersion: apps/v1
+      kind: ReplicaSet
+      nodeSelectorTerms: ["spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "template", "spec", "tolerations"]
+    - apiVersion: apps/v1
+      kind: DaemonSet
+      nodeSelectorTerms: ["spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "template", "spec", "tolerations"]
+    - apiVersion: batch/v1
+      kind: Job
+      nodeSelectorTerms: ["spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "template", "spec", "tolerations"]
+    - apiVersion: batch/v1
+      kind: CronJob
+      nodeSelectorTerms: ["spec", "jobTemplate", "spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "jobTemplate", "spec", "template", "spec", "template", "spec", "tolerations"]
+    - apiVersion: rabbitmq.com/v1beta1
+      kind: RabbitmqCluster
+      nodeSelectorTerms: ["spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "tolerations"]
+    - apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      nodeSelectorTerms: ["spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "affinity", "tolerations"]
+    - apiVersion: dragonflydb.io/v1alpha1
+      kind: Dragonfly
+      nodeSelectorTerms: ["spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
+      tolerations: ["spec", "tolerations"]
+source: |-
+  PROVISIONER_KEY = "karpenter.lco.earth/provisioner-name"
+
+
+  def setdefault_nested_field(r, default, *elms):
+    field = r
+    for e in elms[:-1]:
+      field = field.setdefault(e, {})
+
+    for e in elms[-1:]:
+      field = field.setdefault(e, default)
+
+    return field
+
+  def get_nested_field(r, value, *elms):
+    field = r
+    for e in elms[:-1]:
+      field = field.get(e, {})
+
+    for e in elms[-1:]:
+      return field.get(e, value)
+
+  def set_nested_field(r, value, *elms):
+    field = r
+    for e in elms[:-1]:
+      field = field[e]
+
+    for e in elms[-1:]:
+      field[e] = value
+
+  def contains_node_selector_term(r, *elms):
+    for t in get_nested_field(r, [], *elms):
+      if any([me.get("key", "") == PROVISIONER_KEY for me in t.get("matchExpressions", [])]):
+        return True
+
+    return False
+
+  def patch_node_selector_terms(r, provisioner, *elms):
+    terms = setdefault_nested_field(r, [], *elms)
+
+    if not terms:
+      terms.append({})
+
+    for t in terms:
+      match_expressions = [me for me in t.get("matchExpressions", []) if me.get("key", "") != PROVISIONER_KEY]
+
+      match_expressions.append({
+        "key": PROVISIONER_KEY,
+        "operator": "In",
+        "values": [provisioner],
+      })
+
+      t["matchExpressions"] = match_expressions
+
+  def contains_toleration(r, *elms):
+    tolerations = get_nested_field(r, [], *elms)
+
+    return any([t.get("key", "") == PROVISIONER_KEY for t in tolerations])
+
+  def patch_tolerations(r, provisioner, *elms):
+    tolerations = setdefault_nested_field(r, [], *elms)
+    tolerations = [t for t in tolerations if t.get("key", "") != PROVISIONER_KEY]
+
+    tolerations.append({
+      "key": PROVISIONER_KEY,
+      "operator": "Equal",
+      "value": provisioner,
+    })
+
+    set_nested_field(r, tolerations, *elms)
+
+  def is_gvk(r, apiVersion, kind):
+    if r["apiVersion"] != apiVersion:
+      return False
+
+    if r["kind"] != kind:
+      return False
+
+    return True
+
+  default_provisioner = ctx.resource_list["functionConfig"]["params"]["provisioner"]
+  fieldPaths = ctx.resource_list["functionConfig"]["params"]["fieldPaths"]
+
+  for r in ctx.resource_list["items"]:
+    for fp in fieldPaths:
+      if not is_gvk(r, fp["apiVersion"], fp["kind"]):
+        continue
+
+      provisioner = r.get("metadata", {}).get("annotations", {}).pop("set-karpenter-attrs.kpt.lco.earth/provisioner", None)
+
+      if not provisioner and (contains_toleration(r, *fp["tolerations"]) or contains_node_selector_term(r, *fp["nodeSelectorTerms"])):
+        continue
+
+      provisioner = provisioner or default_provisioner
+
+      patch_node_selector_terms(r, provisioner, *fp["nodeSelectorTerms"])
+      patch_tolerations(r, provisioner, *fp["tolerations"])

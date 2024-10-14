@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: # kpt-merge: /kptfile.kpt.dev
+  name: kptfile.kpt.dev
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    internal.kpt.dev/upstream-identifier: '|ConfigMap|default|kptfile.kpt.dev'
+data:
+  # Set this to the provisioner/nodepool name that workloads should be scheduled on.
+  # i.e. "dev" for staging workloads, "prod" for production workloads and "system" for cluster-level workloads
+  provisioner: prod
