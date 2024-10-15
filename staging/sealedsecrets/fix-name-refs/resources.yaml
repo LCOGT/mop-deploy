@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: antares
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: atlas
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: django
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gemini
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: isra
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: lco
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tsn
+  namespace: staging-mop
+  annotations:
+    config.kubernetes.io/local-config: "true"

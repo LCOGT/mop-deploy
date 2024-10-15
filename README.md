@@ -1,6 +1,6 @@
-# {{application}}-deploy
+# mop-deploy
 
-{{application}} GitOps repository.
+MOP GitOps repository.
 
 ArgoCD should be setup to watch and sync directories/files in this repository.
 

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata: # kpt-merge: /sealedsecrets-config
+  name: sealedsecrets-config
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    internal.kpt.dev/upstream-identifier: '|ConfigMap|default|sealedsecrets-config'
+data:
+  prune: "true"
+  nameSuffixHash: "true"
+  nameRefKustomizationDir: "fix-name-refs"
+  cert: |-
+    -----BEGIN CERTIFICATE-----
+    MIIEzTCCArWgAwIBAgIRAPmxJNCdrpKlOZVpudDOhXwwDQYJKoZIhvcNAQELBQAw
+    ADAeFw0yNDA3MjgxNjMzMTZaFw0zNDA3MjYxNjMzMTZaMAAwggIiMA0GCSqGSIb3
+    DQEBAQUAA4ICDwAwggIKAoICAQDaM+kcwL51aEgn6BTlQkM8pW7LHPcZTUYoEv4g
+    NchahhgeSmRMxJDSOXkELBNK4XUr74YZcFXlvb1dtmiMd6pKL8tcCUqTKhy186II
+    S0Oiakq80ej1C+i0AtMQymab79FSmb1zMioY3GDVWwMu5HQrUJIMADPPUu27doL7
+    9Ua1xLgbnvOX9Trqxfo5ZsLy7yTolLrf9BeSXca9RXD5iOlPpMn72DOkhvh0ayP4
+    RABkQn3/1eGLPneu8QtrDi1dyTtv0Aeb1+aXA+iNQj+EL9M8ryIyIU99vttB9Hmd
+    iVBMpmi/yYDzlh1JmTaA9b7yu84rPe6bZyKnNFpqnfCWTty5RxFHZAVeQV2TFVgZ
+    BOuKsZfKE36CnyEa5FMEGrZxjjjW035SlvzvyUIWw3PEceahkkSHefCDAYmW5NOX
+    1zomInmdz9B0E5fuDi5Zf+z4kEQq5QJ8gKYo5HHFVp3sb9j325V+3BvQhQBRSLj4
+    tXtRKVlsBodJdbM58inxyR5bvQ9Pxz+VwvA2PikYzCjwA055QJyDFxlBueGd1djC
+    FfgvvF/HPt8Jwt1gpXHrnRJANSaGAD/ETrk4F0Mulc7jZBBmg2LHt2EIqLBkYjnp
+    aWs7+z0rojJ3val8RNpmHuQ23Cc4S/CsPgT01pxi3EsjMiIFr2QU9aX4INmwv6ie
+    fbqOXwIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAAEwDwYDVR0TAQH/BAUwAwEB/zAd
+    BgNVHQ4EFgQUhx2l6o7joDbUfwQwig2u3Zn6ILgwDQYJKoZIhvcNAQELBQADggIB
+    AHNy5Qr/kHUWl1H7VJ21KTKSWepXMlQsfn/kLwuMkPEYbcYXiiQBPWVDq76yuKCp
+    HzsqQHkMglGnjtZm1GOtOQ1xHP8QtNZrRcph9nlP7lBfyYgNRupiSlrX8O4YAvhP
+    6uA5Jtv67qToD/HoDqeSK1pe7cdEdnax8LR8R9FdJb1ax/YbUJ+jd4dTSaJLVPp4
+    sPgtfso5CUl/m13Jfexy+x2duAZr0qLipgrKMZRnVbjwc2r13arnRAqiAORiQ9nH
+    wg8+qfFlQUlxMtUpn5edKByogmoEZFMVu54p17LSRDFFkTpgwa611QjBonvgoMmq
+    rcD4jQSdq7Ego7tpz1bQJSHf1S4z/JC6pdlDayE5/OM2jOv1yOVuIcq0e+H5O5mq
+    km/N9HYAbIEhYKRBVupYe3W6NBlC0wlfMFz6FkGGODa3U5be1hET2XgkUHfTpP3y
+    JiNhbuvn4JkLGFSl8kWLgcon+xMa4wFWvWWQ1MyLQli1RC0guei6UHN9oEUhD0tk
+    KgTGM1RnrASSW/DXQzVDK2YU5caIEU+BDqKVNyrCugN21e76Pn38a7CK/fpVtIV1
+    IS/NQuGw9tjuppI5YzlrxCzHXQEz48+yzzuxNr/NTGna54zbSFnFRKO2Owkwpzvp
+    aQalM4uqbFZZfLU9YlHre6DauyWYpqSB3vrZg/MOn6JO
+    -----END CERTIFICATE-----

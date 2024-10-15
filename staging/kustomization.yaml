@@ -4,3 +4,11 @@ kind: Kustomization
 components:
   - ./cd-set-images/
   - ./set-lco-karpenter-attrs/
+
+resources:
+  - ./ns/
+  - ./base-patched/
+  - ./ing-server/
+  - ./sealedsecrets/
+
+namespace: staging-mop

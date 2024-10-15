@@ -38,7 +38,7 @@ params:
     - apiVersion: batch/v1
       kind: CronJob
       nodeSelectorTerms: ["spec", "jobTemplate", "spec", "template", "spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
-      tolerations: ["spec", "jobTemplate", "spec", "template", "spec", "template", "spec", "tolerations"]
+      tolerations: ["spec", "jobTemplate", "spec", "template", "spec", "tolerations"]
     - apiVersion: rabbitmq.com/v1beta1
       kind: RabbitmqCluster
       nodeSelectorTerms: ["spec", "affinity", "nodeAffinity", "requiredDuringSchedulingIgnoredDuringExecution", "nodeSelectorTerms"]
