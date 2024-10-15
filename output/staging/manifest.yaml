@@ -125,9 +125,12 @@ spec:
           name: http
           protocol: TCP
         resources:
+          limits:
+            cpu: "2"
+            memory: 2Gi
           requests:
-            cpu: 200m
-            memory: 512Mi
+            cpu: 500m
+            memory: 768Mi
         securityContext:
           capabilities:
             drop:
