@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master-standalone/ingress-networking-v1.json
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: # kpt-merge: /example
+  name: server
+  annotations:
+    internal.kpt.dev/upstream-identifier: 'networking.k8s.io|Ingress|default|example'
+    cert-manager.io/cluster-issuer: "letsencrypt-lco-earth"
+spec:
+  ingressClassName: "nginx-lco-earth"
+  rules:
+    - host: "mop.lco.earth"
+      http:
+        paths:
+          - pathType: "Prefix"
+            path: "/"
+            backend:
+              service:
+                name: "server"
+                port:
+                  name: "http"
+  tls:
+    - secretName: tls
+      hosts:
+        - "mop.lco.earth"

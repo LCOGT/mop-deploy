@@ -1,0 +1,994 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging-mop
+---
+apiVersion: v1
+data:
+  PYTHONUNBUFFERED: "1"
+  XDG_HOME: /tmp
+kind: ConfigMap
+metadata:
+  name: env-m9d75d79d7
+  namespace: staging-mop
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+  name: server
+  namespace: staging-mop
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+  selector:
+    app.kubernetes.io/component: server
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: server
+  name: server
+  namespace: staging-mop
+spec:
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: server
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: karpenter.lco.earth/provisioner-name
+                operator: In
+                values:
+                - dev
+      containers:
+      - command:
+        - gunicorn
+        - --bind=0.0.0.0:8080
+        - --worker-class=gevent
+        - --workers=$(GUNICORN_WORKERS)
+        - --timeout=$(GUNICORN_TIMEOUT)
+        - --access-logfile=-
+        - --error-logfile=-
+        - mop.wsgi
+        env:
+        - name: GUNICORN_WORKERS
+          value: "2"
+        - name: GUNICORN_TIMEOUT
+          value: "300"
+        envFrom:
+        - configMapRef:
+            name: env-m9d75d79d7
+            optional: false
+        - secretRef:
+            name: env
+            optional: false
+        image: mop
+        name: default
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+          readOnly: false
+        - mountPath: /.specutils
+          name: specutils
+          readOnly: false
+        - mountPath: /.astropy
+          name: astropy
+          readOnly: false
+        - mountPath: /static
+          name: static
+          readOnly: false
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |
+          until pg_isready;
+            do echo waiting for database;
+            sleep 1;
+            done;
+        env:
+        - name: PGHOST
+          valueFrom:
+            configMapKeyRef:
+              key: DB_HOST
+              name: env-m9d75d79d7
+              optional: false
+        - name: PGDATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: DB_NAME
+              name: env-m9d75d79d7
+              optional: false
+        - name: PGUSER
+          valueFrom:
+            configMapKeyRef:
+              key: DB_USER
+              name: env-m9d75d79d7
+              optional: false
+        - name: PGPORT
+          valueFrom:
+            configMapKeyRef:
+              key: DB_PORT
+              name: env-m9d75d79d7
+              optional: false
+        envFrom:
+        - configMapRef:
+            name: env-m9d75d79d7
+            optional: false
+        - secretRef:
+            name: env
+            optional: false
+        image: postgres:14-alpine
+        name: check-db-ready
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+          readOnly: false
+      - command:
+        - python
+        - manage.py
+        - migrate
+        - --no-input
+        envFrom:
+        - configMapRef:
+            name: env-m9d75d79d7
+            optional: false
+        - secretRef:
+            name: env
+            optional: false
+        image: mop
+        name: apply-db-migrations
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+          readOnly: false
+        - mountPath: /.specutils
+          name: specutils
+          readOnly: false
+        - mountPath: /.astropy
+          name: astropy
+          readOnly: false
+      - command:
+        - python
+        - manage.py
+        - collectstatic
+        - --no-input
+        envFrom:
+        - configMapRef:
+            name: env-m9d75d79d7
+            optional: false
+        - secretRef:
+            name: env
+            optional: false
+        image: mop
+        name: django-collectstatic
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+          readOnly: false
+        - mountPath: /.specutils
+          name: specutils
+          readOnly: false
+        - mountPath: /.astropy
+          name: astropy
+          readOnly: false
+        - mountPath: /static
+          name: static
+          readOnly: false
+      securityContext:
+        fsGroup: 1000
+      tolerations:
+      - key: karpenter.lco.earth/provisioner-name
+        operator: Equal
+        value: dev
+      volumes:
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 16Mi
+        name: tmp
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 16Mi
+        name: specutils
+      - emptyDir:
+          medium: Memory
+          sizeLimit: 16Mi
+        name: astropy
+      - emptyDir:
+          sizeLimit: 32Mi
+        name: static
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: fitneedevents
+  name: fitneedevents
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: fitneedevents
+    spec:
+      activeDeadlineSeconds: 13800
+      backoffLimit: 3
+      parallelism: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: fitneedevents
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - fit_need_events_PSPL
+            - --cores=$(CORES)
+            - --run-every=$(RUN_EVERY)
+            env:
+            - name: CORES
+              value: "1"
+            - name: RUN_EVERY
+              value: "24"
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 30 2,6,10,14,18,22 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: gaiaclassifier
+  name: gaiaclassifier
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: gaiaclassifier
+    spec:
+      activeDeadlineSeconds: 10800
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: gaiaclassifier
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - gaia_classifier
+            - all
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 30 14 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: harvestasassn
+  name: harvestasassn
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: harvestasassn
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: harvestasassn
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - harvest_asassn
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 0 12 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: harvestgaia
+  name: harvestgaia
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: harvestgaia
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: harvestgaia
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - harvest_gaia
+            - all
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 0 11 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: harvestmoa
+  name: harvestmoa
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: harvestmoa
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: harvestmoa
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - harvest_moa
+            - 2023,2024
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 0 12 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: harvestogle
+  name: harvestogle
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: harvestogle
+    spec:
+      activeDeadlineSeconds: 7200
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: harvestogle
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - harvest_ogle
+            - 2023,2024
+            - "100"
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 30 1,7,13,19 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: harvestztfdr3
+  name: harvestztfdr3
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: harvestztfdr3
+    spec:
+      activeDeadlineSeconds: 18000
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: harvestztfdr3
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - harvest_ztf_dr3
+            - alive
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 15 12 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app.kubernetes.io/component: runtap
+  name: runtap
+  namespace: staging-mop
+spec:
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/component: runtap
+    spec:
+      activeDeadlineSeconds: 3600
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/component: runtap
+        spec:
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                - matchExpressions:
+                  - key: karpenter.lco.earth/provisioner-name
+                    operator: In
+                    values:
+                    - dev-jobs-big
+          containers:
+          - command:
+            - python
+            - manage.py
+            - run_TAP
+            - all
+            - live_obs
+            envFrom:
+            - configMapRef:
+                name: env-m9d75d79d7
+                optional: false
+            - secretRef:
+                name: env
+                optional: false
+            image: mop
+            name: default
+            securityContext:
+              capabilities:
+                drop:
+                - ALL
+              readOnlyRootFilesystem: true
+              runAsGroup: 1000
+              runAsNonRoot: true
+              runAsUser: 1000
+            volumeMounts:
+            - mountPath: /tmp
+              name: tmp
+              readOnly: false
+          restartPolicy: Never
+          securityContext:
+            fsGroup: 1000
+          tolerations:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: Equal
+            value: dev-jobs-big
+          volumes:
+          - emptyDir:
+              medium: Memory
+              sizeLimit: 16Mi
+            name: tmp
+  schedule: 0 */4 * * *
+  startingDeadlineSeconds: 120
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: antares
+  name: antares-64cbg75k7g
+  namespace: staging-mop
+spec:
+  encryptedData:
+    ANTARES_KEY: AgAcCtFFm7W/XbDiv352HGnwYxcF+aapy7Ec12aKvfFsGUPWgYUqP9qFa+Zxi2otc4PoD/oBMR/uccCKcwUpGTUI8eTf6zfgCSotIuflAg8Hqxd9uLoHryOOsd/lbbspYeZTzlnQRJxtAbp6HP6ePynIgXiKX6AFcLr8A2aeHpcrQITN1LO4Lh2ZtNeyHM8Bt26R2dZlW6vm9PFlnTULFBwNHapyoTe8GJAxh2wKvL0evsTEERTBB1ArffiLUdpiXngwx4WuQlKeLbmK/caWy313RWsFSEBs3i/RzLQuuJf9L0eWYViGG1Tkn+PExmLVAlFMOVl1W8ti3j8toIHG/zpNqTTkIXOY46SLVieAc/1AyNfXftzwf7/rhJ3n1AQyRD/RCAb08TMEF53XAXobQyy3Hb1Grq3ra0vV4gMPCXcF+9KzHnsis/3UDMRTsu9vuaD85+w+Klymp9kGwgGSSjVkokbZXwm6hHmwxTwnGM2j2OYMULLkcOU2exytcZxhYpLKyBsunaaLiTOxkensh4LbGlGfqXMCeKdiiEnJND04ey8MFQ2RTzXv4/agtosbYCa4LQOeh90ojqVktsPyaYsTQdcT/rj4ciRFYTq0XfWISI+sLeDLzODRbcWp+iadn9414fnXwRTYaJym5Hv+jajPbxNCsOZSRtI5Cb3B6B6Xq6Q7qLfFnu9/T0279qq6V1fT3IBzRPtWGPE=
+    ANTARES_PASSWORD: AgBu0EGB0uW6zyeOy1UqAP1ea3rTQNYUu1tqDzuqeWRaaUQk6+VLSsT3CFNb5AiUXG9PXdFN+guFfWNKAQ0UIpIt18DibcUVC38g+UcSvSEH3+9AtblzgKNctZbKhYL/b9a/4Rv6hIBnkEONwttxu6ujBw/HVm7Ui3pjI2Uu5SIUdquco1zEzLXvGDQ/lSaeT+nOPi4KeOkPHBImjYTc+tSZojoa0/GuNz8P7VLhSxrBu6B2YvslBcRBFgACK2Tr8Ext3j+e/qo53cOfFJM5lgWePq1Amnh1YSnEsTdWAVWGWK7Xdq/aN72TGzEbaRNVEsHcfbBaYDIOHZvxvOvoO/tj2pmRR0eaC+I2APOIkyKNNlvepv5/xt9RGyvnXX88pOOuFEzUdXGiszXKQPW+kBgXhQxbCFjStLfuThcBSTRZxxnKlqrbFkORPjIsqVJSY4dSQJ9T32WxEDDlvplU/d4geQqzSJ1QU1pkk6c0ZLoREjpqoVkcfgKC7skk2b7SkK7aAWdswWmXPZA1BizLQT/tWY+OBXhtb2wSl5Gi7MOI0WaQ68N8QNWp+96hqjVeMTgt+KVhZfKbTl/kTREHX3FOybVx4nbjRKzczngWCpB8CQ4oyq+einyTKfELg4gXo0FFOGHQM13qGM4NINaH7rwf5ho5EQzACBwOimnMR70klJWtWxYDcvdfBJ9SMIOs1iMbJsdqUAeLZw==
+  template:
+    metadata:
+      creationTimestamp: null
+      name: antares-64cbg75k7g
+      namespace: staging-mop
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: atlas
+  name: atlas-8f9dbb42kh
+  namespace: staging-mop
+spec:
+  encryptedData:
+    ATLAS_FORCED_PHOTOMETRY_API_KEY: AgBcKUG0BXQ4yvd6OUd9MudRoN+cMtC9lWDqbkBX1FH8dr+a+a9bWPwmN1mA2nl3V+iqi6f/iZ/aCTqwuHh2L+dT34hG4L74T0JkEtAR8trm+q4snE90jgGar8NWIMzDkTfAiShdf49BaA9kck2CbHG5Z/nwfWZ0SffJCWpYad7UxqkQvDmcSWPFlOMBfvqS+ycK7FvyOy1EuwbdYpIZFzHQ5o4KrTl0Hmx0gl2USTRVukigesOceMAnHCC6pldRfr2OhbYaGBCpD88hC9SlCFPSVCox6F8BVfJcMNKnGfcl58cwgz8K6k645/tY5j262+R6UVkNXG+XTjZ50l+HtKEQdtFYZ1qV5l3449FTknnVwWH8YVQoEV683jb4Mvr+l2nghvY3PykRUS0f/dlLV7u9E+Y7m40g+crpIcP7am52DyZNcqaw+dbswM340RF12+uF4J3jGEBik4V5QHC6Bsq5+D0OgYYJH8c6EkGmylZyU29HP8lmqx/SVdeS9369YlX6tAbMdRp/EAtXl9cDlcOwhL8W4A1c+RDBfWin7wqaXX6CYXncOWmNCH95STvS/LJ99PawPDhiPAyqmZmn7EVRHk9GW3cPx+ptpxoYtCVTsRScNQWv9Qqq8Bo+eNmGhlWk+XRFAS2IYmKtSAZRjj3w/pCjn00/xfjoh6Gxp5i1o5lEUqTkLNR9TeJdKiW9a6am212qrOkHeJ8QffGnZjAZPdSoIJCgtW08zYppZzXx3LqiAKmOzAiw
+  template:
+    metadata:
+      creationTimestamp: null
+      name: atlas-8f9dbb42kh
+      namespace: staging-mop
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: aws
+  name: aws-5kbh8hk29t
+  namespace: staging-mop
+spec:
+  encryptedData:
+    AWS_ACCESS_KEY_ID: AgCZTAiR0rWdb/DzP6Qqi7FmWHNNOBkGSkSAvf8RvYQ+7RLA4mLtpWpwS0rJoTx7xPjjtxTcYQrsIvIk5R9QzVgSPvyb4+o1xQUAZfzL/pei5vaOqNIV6C6S/XGcabMYLBSjH02Kaqcf2zumQRnbSIBgIAXo5Kd7WZCaDm6lOeyd3qQxPi/UPeYnytMi/CndUbuSOHvoQphKdr5ZyEdncBFr6Nwe4LlvY6Rpep2lDrvLa9wQoQaJaO6Obxar9+xoV18LhdZApVhpUpm6G2QiG2+E+pu2E6b1cDIgKMZHBYWeYAjZJL1/U1nESgKVBYvfuFa3YCgK+HsZJxzSZli95j+wZH2JX3qEbTG2N+VDjQcfQJifHab8LaBrJg+r36me+szgiRdQnAM6cCGjdRhQVNi8c8SIh7ylFDLQW0HQmL1xQZZJd3JCc9qkdLIM1slmnDHfAPSg8ZIpTbzap5FZXExZuXXC6WIC+czjp23skFNLCjpJx4ZH1ExtOG6rZPIE5CeXMZHtaR9BaBBQH8TiD76rRp66fFZfke92D0eT3Aw024o/3uZJSMljne1yvoPpZQ9S9wjjplwiW+VqiAm7KJgc7+JFTCETr3x0428jDIJqqPFl+waek3p4FlzTRscB2FL6wYU6iaJohKF96o3gyN00josD/WmTF16Xj1H/qnBkmiWNM7r1ywU+FMqPmDYFEX/mbDIed7DSRnNRp4bVXjh+nRT7ng==
+    AWS_S3_REGION_NAME: AgC5q87qnHSgndaC9MhjRFL8ON/XvaH3Y1OGGi8G0vspe5qksDSc0JMcRmbPRi5hjyexFTKsfMijSBAxNgVTPVsJ9ryVC35nXcO70ag9TVSa6cFwFS7RO+PIkL8BdZBNhC89UXBFSEUEwJpsopP9Ng38oi60POIGG3dS3FEppYaWcc9qB//TbvcC+expSlTPtT7GjMmRU2OouGm7v0RiLyBOhLx8A36P7VyvvLGxdOOf0M010CWmCKsv4+JKpgRAGFUG+mEiurV5iTs6//ckOZdF2MdmDURNLJNsgNtjbTVpaSJfYLO//yCOmtFyg5V8I/6HZJFOSx7NLZdpF4LzjfaIKUDed79ndJmUpGfvnoN3rpYd7p553Or3QB2I2ke6p4eVgUebUk2t/5DVAJUgTjYb7tLjrAl36qSAUQa9LMfL6BLxFb3tC5bvlvUtTvNMJEXCSK34K+KCmfqJTWgZ7xwKxqsXtqNNf0B1PcWNUeME+2qUYYHbW6DCt5OMiufMed1PJ69A3YKPegjJWRRC3JmoM9ojRLAPmc/YB+0SbPt51uJEv4dm5TXOJ14yzFmlhP9LzHnKCiwV9u87PPhHnSEfpMnzoz6p1yAsDLvLwMLVIgAZcu3bGfBErdxlXs2rKRI3xvsyy1a4toKyNZs5MjoMrd9fQdQseHZ2pwsV4hXrvvEB5FT/5Ig3v8uiHkLqoG5w1FbB3fMCBlw=
+    AWS_SECRET_ACCESS_KEY: AgB8DACpEi17M/LI0Mgg0CNVxFBTtuwHNixyEvnJtn3Or6t2kKV/LNLI9tbfl+KKNDkgFvPjr7fq90nAJa9xUwX46+1NRVEmXikjL74xRCaGqLtoSOgSHkmYhBRcthCmqfTqqzdaN0iDeiF3vhN1wEI6/epyu3/DRjTp61rNc62BYdZ5mB4SeZBUMf1I64S4B8x6WgMCNFaCqOCfPYQVQi3sOv2eK6ThjaKsa949UCFWOnceYxXyreZAY1GXGjuxQK448VpOk6fuGFBHYnk935DHkH/6nvrBzOBP3jEE8aZ2bv2mF6WFp2sEBlGquog+cNyDwCDg/P/A8M7DYBEg6TezMbDgNHAumxChIW/KOgPeL3cf2KHQaj2muA96bTWuhQvSUQc02OTf0BD4/ySX5mgzjYtpYoyLrmv1KajuDrb0dr+wTFHN4iYqg+bvksZKvoHsqArETVGBHC9UlEJPrAN0955z6Mbncdm5SowCavbuZrDJEnApWSolf5Cm/MnVvEUhWobjFDvxIsOxPkof8WROT9bv8f8I+lQSrNEz7q4kSActUzalzAaWfzgQWDYFLuYFEMJzmXOeHdrazDGrF60pyv4jclKJRJyhDZygHYGEs5bwQ3QGAylJjTNBtcE5F54AUEg6UflBBiChGoLUFnzUO5GvzHkIMhTqt0MNFXWQITTxwf4X/2mQswcTgY+e8HLr3Me7PMkok+STsG7AOM+MkfWXWC7y9vBTTfAkb+kB8+4bFRi2F0ox
+  template:
+    metadata:
+      creationTimestamp: null
+      name: aws-5kbh8hk29t
+      namespace: staging-mop
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: django
+  name: django-td6dm2tb4k
+  namespace: staging-mop
+spec:
+  encryptedData:
+    DJANGO_SECRET_KEY: AgBp25jSutvcngBBuYZy5Zyj84NgsN7Q29M84qHGmL2LCCjGD+3DMc6+gicTqpKayL/62xZ21s2hDQr3dtmL+iOQoaTH5/pKAND9Iv0XVTi/hysmruQqNJ0ZqsMbuSnuffyCYFEcSs4uPzjWUBfqCCBHh+bBllimwbJcKIKxUcxoYj1ArOmhL8Xgif1Ltn4nrjGJTcf1cG0Kwym0G/EOCmo6L47xZpC796FYNaufF2aNz5wBzwFUqdIcCdKMOYJJm0BuGe42oDpKEOsMC9Lqa/kIBgEwOqUhzItDBTceSphjhapBeSdKhjB2PoR0DQIB33Kbn9Xx34qB5E9DexZFBvAQBKE78bt1U/EPsFnMU1ZpWG/Bt6NPFFWo5dXaTIeE0Re9SlJTxALta23gRrghUA/TvxBPfdJq05EnoTvVRYTiz41k+ShasnCj4p5U7AvzcspuxioGq6Q3wYH30lDG3j3iNraLWsZKaX/0TZ3a83osaJXQdIXsHX9b+TinYDMVeym2xgqfxupS6WaA5LercNmcaelLbbcHia6BgTyGix1+/6LyHY+jpe1+kZlnLzb6JcfNIV5iHiA5d4ldeiNtGvUka7f2yVRC+sJt1DWcn3feFzSkN7SyZQ3hkRpBccDKwxs4dZVlz7L34E/iIBVPF79yTQ8tIu0L7IV7xhM3EAz93BfRkDvfwG7LdjmntMolheGdsQAEBs1/hm3riDbZ3SKYxjZYv/QA+nZO7vQfZwYZIeRQmDR1CUhjj92bFEJhQE/dZfc2p54=
+    SECRET_KEY: AgAQ6vKlIt1B33oh9gJJzkq0bYNMSzyeLFJfIOom88hOv2dRzi43WFneSyPoidGeQEeKqSWlP6WHUDNNvF0REKH858UfC0f+DGf0I5DCLDvqcuVZ/IyalV9qJJvkzoiwN2UXuYg/59kNz1pEvpb4WhZpo51WXk+Ddfde9ds185mqGDopTx1rZtT3UT2CGZrxnRXxc0RNdRGjAPZKiuhfWnOseNjR8xmsGcgfFIZW/84PKPFZJuGlqtvgcnc6egyKjrboVo+PYQa6b/fRwNTbSBoJ73BObDf3pHRDQ0uXXaNspoqLYyfwAdlP3xtDCOLKOVnJfZfzr6UxClIa9pSe9G7WVpRJZrUcvEtf3FeHmhGBRTRLqe+nQSqQV3oUltLj/92G+0Kb8NgvB3yyF65EboAkvsPfkicQcLpPjniutQ8DUmE/uN0VCn70jtrwwxVsydCuHyRSsq8PLVjGizhhegDBx11eD3gG7TpA/NlE1gMPGiUrnImGANm/H/5sW0sJsDJ8+x3xF2AaEo48NYkePVpGTag4yvJiUE7IZUuz2f3UtMzvneoUNM18UHvDiurppC/yVvR31GjB67b4fC0QvgltYuTkKevwY2pfbQeJN9xoje7+ffh3VCcFpLWLZ28qdSBbNYB8Ip17CByRZsm153uxRzWnKqJ7F9NZhvjvFkJCNWRcEG8Rc6FwxzQK7OTjgSmY8Jqg7NQ4fiJWsw0zvpyl0h0IOqKsZraKeMis8Lsj8G2ybWUCXd2nwh9eg6vrQZgrpDRG50g=
+  template:
+    metadata:
+      creationTimestamp: null
+      name: django-td6dm2tb4k
+      namespace: staging-mop
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: gemini
+  name: gemini-b754mtghd8
+  namespace: staging-mop
+spec:
+  encryptedData:
+    GEMINI_N_API_KEY: AgAVYGuH6chhb/lBkuD0vcEo+bm3I+P1SdpIpm6N8+2T/hvF/BTFPaVWSQOTLQoT3OAJ/pqCf/Ean1P2+sM0U6Vg8DKp6wBB0SGdBnA+IP5zLqg2y3oq+iRvoWYjH6B0S50PAsgdlqBet1YsGk7cnjSrZVA6t1Hmnax8CbGYu4BACEHov+1ThOBGsdbSlvll/HvCwXj6eER+ZNpkqWPvqq6clltTaJHBZcFFP4QEEYCz1I9q1D6V3FtA+KZMcQGbUnvhXT3VPiP1YpA62ydgmFCDj9euzVXtHmpah1jpyPZ5V7O194dV+7UkxoYk14rd6HEBQBMCo7IRcmR1d4qJMDNB4oRLTs+QADwu6VMQ/Vb16E1zF30Up3kjRGnsxYif9IzdUGuvSBmFAkr89TKuK2f6Jt2/GX5kikz28MXsAnS3mc7Bea87pcR5P/nyKGmiHLmCVSLBXXER/K1GBK3BItHJf22F09+VaJz5Drs+W+yhSRnB7uRls96k5GpnqgbXFf5qJRual3YzBVbGOim/3GeJv08/KobZNjevolNuHeUvXLWKEzQhWDn7Nc7QgdAzPwshSQCVC9GU4tsLJpQzXuOAF673NJRILd1fixkLRa7FL3XpsffvOjkUr1xUBTr4qH1IN5Q55EzzFI6iiStS3UH12W0Z/BuECqE5zC7F9RG+QbUM4+ZGB3huMkrGDWrA2nXK0F2oRvE=
+    GEMINI_S_API_KEY: AgBgmRYBx21/1DGaAE7TIXhAT+5fvw053Megmhj6ABNfe9uSC6ZW6KNmdYs8AqapkJGZQDw8akF5FPzRnCnq99dDjcRWtBIC9AWgxiwHeUoi3qI4+fS14kPd0JdCDQ0jJoQFOF79IK/j4wJ9BtzFJvR4VVd7cvhoFPiwjexNhPYQcnLL+tMj4EpL1wsqDmgkgKK0MyWJBAsocZtm1UGnN8Z2IOhqZQa0ZehMsF3X9dEnckfRl6e43PJHyBovTufzGPZwjNff6j9YsAGT09Otn/eXxZ1sAr1Jf1yvI21eUCdWJ+yRKKiEoz44FyhrIMOBao8n7x/+aV1/arbXOqMQ1SwEuRDR5zEQP/iNfKbJYjy+HudJCxr+WhElzntp964dHJsm1aPYjWnp3Sv8VHtu343gDj5WKphjmW2X12yBtayBNMke514SWhgF4JJ5SpxJdbfCqV1U6tS7RAXj3crFhuWiNzGyK8reWsD1uigM/YByUpc8yyYoFEjZOQ7fClHpLnOkP1QajMmCZXA/l+Z21TibdOhmAnU67scwXVkY6+DZanO9dxz1YCDS43OKYAdsu7c6SaR5AA1uJwws4mEypR8sT4RJfTrfFmQsoyZ3HR7eGEBRR1KEh7SO9qV1SoLkB9Eim+BjPJirtWju5XFvLZV46EYSOzBbNLWZ7e8+sOegd5bdpjBNe/xApZ92AMT/ZQKGzgm6JxU=
+    GEMINI_USERNAME: AgAR3KUwbr2Ed7tgIaRXmxXTTqDPJS9NwMN5riAmExPGML7xwUDwspO3289QIqMmD4ibk8R7nac/mCUSwIZLZ48AW82ZCjNiisC1S7wZCqBqFUZFeyZN/yt5ua4DgL+S8d/x5j5rKSQ63XJiywcRgRYVvcuRgXgE8AWDlrMQ1MODNnq2zi7y++YZQZsYOhn4Pppz/xC/eMubu0GXPvUEpvJpktfs4AwC/Dhn5kH5aMCy9zK0XUkxaSwJEqE4ol7UqtnFY5oTAlgeWR+HuLy1i37S3c5vfiy0e/tWqwPh5ufaplFObZVJgdI06LX4aquSyXTnWSQe6y0GPUFjNAE5/N0tUXl8bEYL/9eT26aHFo0kOy/qHRL9LTQnsmyX/vYiQ5O+dryNKqFmGI/ObuTxYkfmmTht6aa1RwkZiw0b1gIeJZmmx7ekeiNXKjBniEpHXJOj+S3uRkaCUcqg3y31tmcFCF6fqMCo4rtcaSOI+uS/+buKShzOCfwsP0Uwj+Oxykg8k61r19vMcMh/vSFCyKXnSHLbg0a2LDynOWXSZ7Q/nm7luh5BTAEgSq8zZtDfTM36JBUervroTovINAzE9bUcgSA9/7kgXZsPVBX6k/KwfCab6S7HNh6fyZDyhFkuIdMD6kfcXqXJaxuesIINlq9ZjI7xGmzA66pH0YLfFzWmzQj3X4bTLptP/rS7exsXJZFABnPP3c87JWTclpNxR5ZXPpZ5qA==
+  template:
+    metadata:
+      creationTimestamp: null
+      name: gemini-b754mtghd8
+      namespace: staging-mop
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: isra
+  name: isra-cb2dfdc848
+  namespace: staging-mop
+spec:
+  encryptedData:
+    IRSA_PASSWORD: AgC0Y11Tdo4qZFQ2DrNnTymp1+GC9TpW2ynXtvze2IooNQ+dOIET474MEOZAPw+7EkBu1LDK+z2xDcv9kqk1VBJiAaW32CyKv0YrzJDdhg3klzXvxrwmjRydet7oYmQfpcqMi073i2bop12Q7rfgZa+IqI7wEaHVQlyyfKczYuHntpiYc+IS+0+PNGz1APdUtNmIIJbRAIoCBJCWXEyTxz2g8wTAaOZwE6mRZhtM6/grKY+VbGciipg/8i45Pjq3lTtWha7dahKmEgTbWES13lbKLuQKadie23OCH4+nt7DoaMPUieGHyc/mAKEnIq6XM9TpTZaNbZc8codt0CdGcIMxMMw9jdBxuiz7pNrjJZ2GYZ/ZTwR8k6zCOl/SqiHpOLftqpKw2mc6Cw8D/ciniZB7Iv60/yuIMVpa9Qyka/dLRpmVLW/VXhRoS8Godm0FU13YQmmVtMEgNXJmmnnN+nVcR9R0ozdRW0cFUDG2MK2h4oyXoWE4GlLHU6rOWYY8DnRsWVoPf4eYcMb3MG2ovbqGwYnb832vfCiUhXXYDVMl0l8l2mPkoqKJJ/aJ+VuUHbWrTrJVljtbvJGRfkchb/VEXeJUGwxkjuk6x2E3gkw304DLic027nOi9ns51vPhyiabhPUWOfFOHPxjAz0XFkDfSj+Ky8SMJdk7w1yy1H3oaOEfyZGWa2FuxBPVyybbZYFbnQvx/GxKqw==
+    IRSA_USERNAME: AgAX32/vkxMb9XmakCSBECtrC8xCcib7uPbc+RQak2idrP5fqyeL8B8QBZzXc96Qil2CNokaG5INvAowwwJgKQ9vvOiARYAZSQHPgBvGSXz1bUtDXa4WXEi1yCapC9QmX3bt3GpSJ0D/yoGcWAcHv2qhAVG++FfckXkEeGoJnQWIGCyT8S4KkAaXe3VKd99XGPjRN8iEcE7bYi9c09f3fRldKKCmGom6dbIRXaeS7+wNSYIhHVV5Zr0O8UvRIC94GwkMSwqFKoJOA4015YIMXgRwHflhURnJYcWbueSK326MDWBZUfwsNh5i0W9Z0v2vtqxpbANXjtTYCzXm8479/bUyYCEhQLFTAgiEYFlqXSwc9/XKXLzCz3JDDpSfgMFMBIcbV4cnvJJU0saknQxTsLGj3yfD6LPI9DFTcQ9F8h2Ldv56rw4ItZDvySjHhot9gdDKB/Bn5V1PB1U9KNRIWcKfSFFDX176DH5Q5g2ggrg7u2js/i41hSRxSGLkIz60iBrtBGczMdtwKD+UbgBpL/A4PaTx32QthZGf0IfEel5K/z6TpZIBz+v2AHZQV/jRQYnlunivvqcl9XKoqPUdQBqQv0M0AJ36i2YtDYg3q4/q9kxE6TPg80WlESu+P/Vcjo4eWKPBE2vMGE/GkxOiJyXrMTQ2ZQxjuP0BjF8nOoDA4wiqxlxn9GASH22UGFZPLXU8b0yB0QyNbBjP/ER+JrhHxA96e20=
+  template:
+    metadata:
+      creationTimestamp: null
+      name: isra-cb2dfdc848
+      namespace: staging-mop
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: lco
+  name: lco-7bb8hbdkh2
+  namespace: staging-mop
+spec:
+  encryptedData:
+    LCO_API_KEY: AgBfMcNfh6XxWaWlv2qKzjvpCEuPGtW9EZTJWp+BlIK3xSu5PM25zUa9CbDW7b8u9i5kpHkQ7vOT1bQdH614Mo/hJpkucLblpsZKv2HzveTX+6crUohcntXQ3ARKecMduEc5IdczW66v6aTZrGCzREDA8Lhz1ML/1Hmxm6/oflWDWbtyFqfBumHclXDaDFeVM41Ch+6b5ayC0tRsM/itoxluGRkfiPNHodleGy1TSKKy1XchmDDq7j5TU2A/4l2msmXq1rcujxvmIua5ZSiK7jTqDiHAZNwA7SpUjcUpt235VUEHtsREzVqlWPC/6pGg/zkf3K3ccwiriUJT5NdeHWFtZ+GLD5SkWgEU9eXW9mhpPI11MLxOrAOmLeUzOzubonXD6ZRoMdx8GfKtLwZXYgSgSIhgCZuGEs+tqK3tLFGdnlT5VyjjZsiG/WmuanMjfyZdLnAiwqoDYo44ta4vhhtRALkFGowkkdjN6KwsjINf5JC+yo7ruoLen0vqAtllMArZtqqYYHpHEuwl1q85ZtJ3QaVq89Zk/o9GHILvTh8+0Q6L06qtR6Fkzt38cZV40WfumGDX5tNbv3LB/K6m/X3lO0QNkOD/90vmXQNR8rnU6F6SReFlmdaCN+7H0j0oni6ssxxrWtSuKPfvgS8oC22W+HV5mpfrG2CfQI903qK/bDNHwxl/AUCcw63aJM2p7d4ZaVyC+OiKLrMs9aQmL6lEQ1KSVvHDSsbgbRuQ/2MMi8IgCSz5NxiX
+    LCO_USERNAME: AgBaLF4Or9Ngp4IcgUIvXY6MUbuWtjtAtEe+AId6QGfnXK68GaxHLABHVbCywYf00HLLthJhMTOS6qsAJ/ZRIwZuOhc8DNFX6TA3HEdK7KNWt6Zv2VRk3MArcOPMStunVWEaJ0v4uprVhTrbadcn+pGCtdxIiJ4nMvGGaPwXZT/hx1igW0Kj397E3uvS8mEWKife+UA+vC3NQGLD2Y5AhhbIzsx7IP39ABNUgkbl3ym8Oe4ZoTReIoVLYbF0fBFC2QBbOu1JHCpozNgO4AlFamIkrrm20fCfCQCk54rfykSn/coRMO//klk9zt0R/MO3YwxfDErudIR9soKtyCyica4gp/6jj9aNXG+nXEYMS9tKCfCBeUEg4tHW+cT1jvMVToDX7GxTnYQvBjueKeIce3B0NzERCSvFoOYSduuQSgOKZPR9C33u1Td1FL/7rHKA55luoL1s1x06ZBPgbvfW9gxtLLf1LCymFYN8VxtxbdoRrA89dkxAqPIkoxYzeNN3XuIebhl3i+1Rkw7qBuv9jqb6jQuda4+U/2cwXKbKY6zf8Sqg+as+zwEecb+OBUZX1r0OoCqXvums6WNAAzYRBmHfIEMGxO7EW4VTUqlmjFZ6zDZ4BESwXJzeiFz5jKKLYsfjWr8jvbSFijzI7RkiLTJj7p+ByxfmB+zYIy/u5rCQbStvX+iyf96MxevnfwwYgXXUHdCN6d1j
+  template:
+    metadata:
+      creationTimestamp: null
+      name: lco-7bb8hbdkh2
+      namespace: staging-mop
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  annotations:
+    krm-fn-sealedsecrets.io/originalName: tsn
+  name: tsn-26bc5hg2gb
+  namespace: staging-mop
+spec:
+  encryptedData:
+    TNS_API_KEY: AgBj1HquryuNyIDsGA9AX+bcmnXDe1OKopyR8Kp/k2l1kYN7au3XxqLFrI3gE1U98NWFCutOob8inBLevquAD3VrEqR3F5M68S7Ab1M7q42MMcJ49i89NeOngHzSVe5jFmWxONUsDtIEmDQUMKOKLApB0rFng2TJ+wrfiLTBleJg3YrFNGgH2Rz+juWSNTJKWSCH2Jr4gLDN7rPo/P1eKkfu8IC5mLZ9o15A6ZmBhwrxdeKkkZergrkMdjR6ijjd3cJ+7mEcU6GdYnlOD9aJqi179T9Ab9wur1Sh3FuYnL04Dnn4ZgE1jSakGAD/WLJfNGxjdgcvkIuL4N1rNaHCz2Rpg1mnl49ZcLxNnkzMv+kXRbOvZFmL+AP/ngO7fARMjLl0Ghcg3RFUMnCiR6QGN7/jp/5GI1ZKhETgj1K9VN25shqKoD2LOmr8ZVSES3rGxy6lDe6j5uUugdA+4eRkQT8dRvXRbbn7jPGsq71gZzp+b7MQhflnaYl+OXK9lhhB1qmRsCuXBsIEtG/ITXcYHfEFjogCcwRy4n/Fhyo3G6N5gaA+7ioenP2rYtK+voDnpThLfUskvJLfSL0yv+XzlKUcmd/s10BqwBXZQi6xsbZg7/VuKl2tzM3dxPjlcEZkuRoVSt1DylahmhTtMBLb9n+peLb85RpN3BuHYzxqTBbuEo6iLDKS3XZZDNqorHLk4/58gph9KqQ9RwByetd/c2gz0K1ZU+Ph3ybenWwdxrq9SGtASb0aaDs7
+  template:
+    metadata:
+      creationTimestamp: null
+      name: tsn-26bc5hg2gb
+      namespace: staging-mop
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-lco-earth
+  name: server
+  namespace: staging-mop
+spec:
+  ingressClassName: nginx-lco-earth
+  rules:
+  - host: mop.lco.earth
+    http:
+      paths:
+      - backend:
+          service:
+            name: server
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - mop.lco.earth
+    secretName: tls

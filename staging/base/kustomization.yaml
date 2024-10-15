@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata: # kpt-merge: /mop-base
+  name: mop-base
+  annotations:
+    internal.kpt.dev/upstream-identifier: 'kustomize.config.k8s.io|Kustomization|default|mop-base'
+resources:
+  - ./deploy-server/
+  - ./svc-server/
+  - ./cronjob-fitneedevents/
+  - ./cronjob-gaiaclassifier/
+  - ./cronjob-harvestasassn/
+  - ./cronjob-harvestgaia/
+  - ./cronjob-harvestmoa/
+  - ./cronjob-harvestogle/
+  - ./cronjob-harvestztfdr3/
+  - ./cronjob-runtap/
+configMapGenerator:
+  - name: env
+    behavior: create
+    literals:
+      - PYTHONUNBUFFERED=1
+      - XDG_HOME=/tmp

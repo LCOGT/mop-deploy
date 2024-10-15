@@ -17,7 +17,7 @@ upstreamLock:
     repo: https://github.com/LCOGT/kpt-pkg-catalog
     directory: /set-lco-karpenter-attrs
     ref: main
-    commit: 44eff6a4abed9b954b7bf4ac5c62c0900013b091
+    commit: 99a6bc939ffb05f74f31f5a3bd8cd14e7c39da97
 pipeline:
   mutators:
     - image: gcr.io/kpt-fn/apply-replacements:v0.1.1

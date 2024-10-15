@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata: # kpt-merge: /sealedsecrets
+  name: sealedsecrets
+  annotations:
+    config.kubernetes.io/local-config: "true"
+    internal.kpt.dev/upstream-identifier: 'kustomize.config.k8s.io|Kustomization|default|sealedsecrets'
+resources:
+  - ./fix-name-refs/
+  - ./secret-aws.yaml
+  - ./secret-lco.yaml
+  - ./secret-tsn.yaml
+  - ./secret-isra.yaml
+  - ./secret-atlas.yaml
+  - ./secret-django.yaml
+  - ./secret-gemini.yaml
+  - ./secret-antares.yaml
+components:
+  - ./remove-kpt-internal-annotations/
