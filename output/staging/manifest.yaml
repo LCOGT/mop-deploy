@@ -124,7 +124,7 @@ spec:
           name: http
           protocol: TCP
         resources:
-          request:
+          requests:
             cpu: 200m
             memory: 512Mi
         securityContext:
