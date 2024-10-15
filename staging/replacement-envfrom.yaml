@@ -33,3 +33,9 @@ data:
     - secretRef:
         name: tsn
         optional: false
+
+  dbPassValueFrom:
+    secretKeyRef:
+      name: db
+      key: password
+      optional: false

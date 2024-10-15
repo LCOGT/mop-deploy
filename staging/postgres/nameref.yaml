@@ -1,0 +1,12 @@
+nameReference:
+  - kind: Secret
+    version: v1
+    fieldSpecs:
+      - group: postgresql.cnpg.io
+        version: v1
+        kind: Cluster
+        path: spec/bootstrap/initdb/secret/name
+      - group: postgresql.cnpg.io
+        version: v1
+        kind: Cluster
+        path: spec/superuserSecret/name

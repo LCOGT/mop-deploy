@@ -10,9 +10,27 @@ resources:
   - ./base-patched/
   - ./ing-server/
   - ./sealedsecrets/
+  - ./postgres/
   - ./replacement-envfrom.yaml
 
 namespace: staging-mop
+
+configMapGenerator:
+  - name: env
+    behavior: merge
+    literals:
+      - DB_HOST=db.staging-mop.svc
+      - DB_NAME=mop
+      - DB_USER=mop
+      - DB_PORT=5432
+
+secretGenerator:
+  - name: db
+    behavior: create
+    type: kubernetes.io/basic-auth
+    literals:
+      - username=mop
+      - password=mop
 
 replacements:
   - source:
@@ -29,6 +47,25 @@ replacements:
           kind: CronJob
         fieldPaths:
           - spec.jobTemplate.spec.template.spec.containers.*.envFrom
+  - source:
+      kind: ReplacementSource
+      name: envfrom
+      fieldPath: data.dbPassValueFrom
+    targets:
+      - select:
+          kind: Deployment
+          name: server
+        fieldPaths:
+          - spec.template.spec.initContainers.*.env.[name=DB_PASS].valueFrom
+          - spec.template.spec.containers.*.env.[name=DB_PASS].valueFrom
+        options:
+          create: true
+      - select:
+          kind: CronJob
+        fieldPaths:
+          - spec.jobTemplate.spec.template.spec.containers.*.env.[name=DB_PASS].valueFrom
+        options:
+          create: true
 
 patches:
   - target:
