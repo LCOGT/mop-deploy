@@ -163,7 +163,28 @@ spec:
             name: env-m9d75d79d7
             optional: false
         - secretRef:
-            name: env
+            name: aws-5kbh8hk29t
+            optional: false
+        - secretRef:
+            name: antares-64cbg75k7g
+            optional: false
+        - secretRef:
+            name: atlas-8f9dbb42kh
+            optional: false
+        - secretRef:
+            name: django-td6dm2tb4k
+            optional: false
+        - secretRef:
+            name: gemini-b754mtghd8
+            optional: false
+        - secretRef:
+            name: isra-cb2dfdc848
+            optional: false
+        - secretRef:
+            name: lco-7bb8hbdkh2
+            optional: false
+        - secretRef:
+            name: tsn-26bc5hg2gb
             optional: false
         image: postgres:14-alpine
         name: check-db-ready
@@ -189,7 +210,28 @@ spec:
             name: env-m9d75d79d7
             optional: false
         - secretRef:
-            name: env
+            name: aws-5kbh8hk29t
+            optional: false
+        - secretRef:
+            name: antares-64cbg75k7g
+            optional: false
+        - secretRef:
+            name: atlas-8f9dbb42kh
+            optional: false
+        - secretRef:
+            name: django-td6dm2tb4k
+            optional: false
+        - secretRef:
+            name: gemini-b754mtghd8
+            optional: false
+        - secretRef:
+            name: isra-cb2dfdc848
+            optional: false
+        - secretRef:
+            name: lco-7bb8hbdkh2
+            optional: false
+        - secretRef:
+            name: tsn-26bc5hg2gb
             optional: false
         image: mop
         name: apply-db-migrations
@@ -221,7 +263,28 @@ spec:
             name: env-m9d75d79d7
             optional: false
         - secretRef:
-            name: env
+            name: aws-5kbh8hk29t
+            optional: false
+        - secretRef:
+            name: antares-64cbg75k7g
+            optional: false
+        - secretRef:
+            name: atlas-8f9dbb42kh
+            optional: false
+        - secretRef:
+            name: django-td6dm2tb4k
+            optional: false
+        - secretRef:
+            name: gemini-b754mtghd8
+            optional: false
+        - secretRef:
+            name: isra-cb2dfdc848
+            optional: false
+        - secretRef:
+            name: lco-7bb8hbdkh2
+            optional: false
+        - secretRef:
+            name: tsn-26bc5hg2gb
             optional: false
         image: mop
         name: django-collectstatic

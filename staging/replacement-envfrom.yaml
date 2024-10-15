@@ -1,0 +1,35 @@
+apiVersion: replacement.lco.earth/v1alpha1
+kind: ReplacementSource
+metadata:
+  name: envfrom
+  annotations:
+    config.kubernetes.io/local-config: "true"
+data:
+  envFrom:
+    - configMapRef:
+        name: env
+        optional: false
+    - secretRef:
+        name: aws
+        optional: false
+    - secretRef:
+        name: antares
+        optional: false
+    - secretRef:
+        name: atlas
+        optional: false
+    - secretRef:
+        name: django
+        optional: false
+    - secretRef:
+        name: gemini
+        optional: false
+    - secretRef:
+        name: isra
+        optional: false
+    - secretRef:
+        name: lco
+        optional: false
+    - secretRef:
+        name: tsn
+        optional: false
