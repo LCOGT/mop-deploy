@@ -19,7 +19,7 @@ configMapGenerator:
   - name: env
     behavior: merge
     literals:
-      - DB_HOST=db.staging-mop.svc
+      - DB_HOST=db-rw.staging-mop.svc
       - DB_NAME=mop
       - DB_USER=mop
       - DB_PORT=5432
