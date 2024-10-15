@@ -101,6 +101,6 @@ patches:
             containers:
               - name: default
                 resources:
-                  request:
+                  requests:
                     cpu: 200m
                     memory: 512Mi
