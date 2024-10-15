@@ -23,6 +23,7 @@ configMapGenerator:
       - DB_NAME=mop
       - DB_USER=mop
       - DB_PORT=5432
+      - AWS_S3_BUCKET=mop-dev-lco-global
 
 secretGenerator:
   - name: db
