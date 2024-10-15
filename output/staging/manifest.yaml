@@ -5,12 +5,26 @@ metadata:
 ---
 apiVersion: v1
 data:
+  DB_HOST: db.staging-mop.svc
+  DB_NAME: mop
+  DB_PORT: "5432"
+  DB_USER: mop
   PYTHONUNBUFFERED: "1"
   XDG_HOME: /tmp
 kind: ConfigMap
 metadata:
-  name: env-m9d75d79d7
+  name: env-kchd9bk597
   namespace: staging-mop
+---
+apiVersion: v1
+data:
+  password: bW9w
+  username: bW9w
+kind: Secret
+metadata:
+  name: db-g5td8dg95b
+  namespace: staging-mop
+type: kubernetes.io/basic-auth
 ---
 apiVersion: v1
 kind: Service
@@ -69,9 +83,15 @@ spec:
           value: "2"
         - name: GUNICORN_TIMEOUT
           value: "300"
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: db-g5td8dg95b
+              optional: false
         envFrom:
         - configMapRef:
-            name: env-m9d75d79d7
+            name: env-kchd9bk597
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -138,29 +158,35 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: DB_HOST
-              name: env-m9d75d79d7
+              name: env-kchd9bk597
               optional: false
         - name: PGDATABASE
           valueFrom:
             configMapKeyRef:
               key: DB_NAME
-              name: env-m9d75d79d7
+              name: env-kchd9bk597
               optional: false
         - name: PGUSER
           valueFrom:
             configMapKeyRef:
               key: DB_USER
-              name: env-m9d75d79d7
+              name: env-kchd9bk597
               optional: false
         - name: PGPORT
           valueFrom:
             configMapKeyRef:
               key: DB_PORT
-              name: env-m9d75d79d7
+              name: env-kchd9bk597
+              optional: false
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: db-g5td8dg95b
               optional: false
         envFrom:
         - configMapRef:
-            name: env-m9d75d79d7
+            name: env-kchd9bk597
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -205,9 +231,16 @@ spec:
         - manage.py
         - migrate
         - --no-input
+        env:
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: db-g5td8dg95b
+              optional: false
         envFrom:
         - configMapRef:
-            name: env-m9d75d79d7
+            name: env-kchd9bk597
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -258,9 +291,16 @@ spec:
         - manage.py
         - collectstatic
         - --no-input
+        env:
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: db-g5td8dg95b
+              optional: false
         envFrom:
         - configMapRef:
-            name: env-m9d75d79d7
+            name: env-kchd9bk597
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -375,9 +415,15 @@ spec:
               value: "1"
             - name: RUN_EVERY
               value: "24"
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -469,9 +515,16 @@ spec:
             - manage.py
             - gaia_classifier
             - all
+            env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -562,9 +615,16 @@ spec:
             - python
             - manage.py
             - harvest_asassn
+            env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -656,9 +716,16 @@ spec:
             - manage.py
             - harvest_gaia
             - all
+            env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -750,9 +817,16 @@ spec:
             - manage.py
             - harvest_moa
             - 2023,2024
+            env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -845,9 +919,16 @@ spec:
             - harvest_ogle
             - 2023,2024
             - "100"
+            env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -939,9 +1020,16 @@ spec:
             - manage.py
             - harvest_ztf_dr3
             - alive
+            env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -1034,9 +1122,16 @@ spec:
             - run_TAP
             - all
             - live_obs
+            env:
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: db-g5td8dg95b
+                  optional: false
             envFrom:
             - configMapRef:
-                name: env-m9d75d79d7
+                name: env-kchd9bk597
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -1252,3 +1347,43 @@ spec:
   - hosts:
     - mop.lco.earth
     secretName: tls
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: db
+  namespace: staging-mop
+spec:
+  affinity:
+    enablePodAntiAffinity: true
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: karpenter.lco.earth/provisioner-name
+            operator: In
+            values:
+            - dev
+    tolerations:
+    - key: karpenter.lco.earth/provisioner-name
+      operator: Equal
+      value: dev
+    topologyKey: kubernetes.io/hostname
+  bootstrap:
+    initdb:
+      database: mop
+      owner: mop
+      secret:
+        name: db-g5td8dg95b
+  imageName: ghcr.io/cloudnative-pg/postgresql:14
+  instances: 1
+  managed:
+    services:
+      disabledDefaultServices:
+      - r
+      - ro
+  nodeMaintenanceWindow:
+    inProgress: true
+    reusePVC: true
+  storage:
+    size: 1Gi

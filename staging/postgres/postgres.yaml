@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/LCOGT/k8s-crd-schemas/refs/heads/main/api/postgresql.cnpg.io/v1/cluster.json
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata: # kpt-merge: /example-db
+  name: db
+  annotations:
+    internal.kpt.dev/upstream-identifier: 'postgresql.cnpg.io|Cluster|default|example-db'
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:14
+  instances: 1
+  nodeMaintenanceWindow:
+    inProgress: true
+    reusePVC: true
+  storage:
+    size: 1Gi
+  bootstrap:
+    initdb:
+      database: mop
+      owner: mop
+      secret:
+        name: db
+  managed:
+    services:
+      disabledDefaultServices:
+        - "r"
+        - "ro"
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
