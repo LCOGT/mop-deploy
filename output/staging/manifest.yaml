@@ -123,6 +123,10 @@ spec:
         - containerPort: 8080
           name: http
           protocol: TCP
+        resources:
+          request:
+            cpu: 200m
+            memory: 512Mi
         securityContext:
           capabilities:
             drop:
@@ -145,6 +149,135 @@ spec:
           name: static
           readOnly: false
       initContainers:
+      - command:
+        - python
+        - manage.py
+        - migrate
+        - --no-input
+        env:
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: db-g5td8dg95b
+              optional: false
+        envFrom:
+        - configMapRef:
+            name: env-d796tf9g54
+            optional: false
+        - secretRef:
+            name: aws-5kbh8hk29t
+            optional: false
+        - secretRef:
+            name: antares-64cbg75k7g
+            optional: false
+        - secretRef:
+            name: atlas-8f9dbb42kh
+            optional: false
+        - secretRef:
+            name: django-td6dm2tb4k
+            optional: false
+        - secretRef:
+            name: gemini-b754mtghd8
+            optional: false
+        - secretRef:
+            name: isra-cb2dfdc848
+            optional: false
+        - secretRef:
+            name: lco-7bb8hbdkh2
+            optional: false
+        - secretRef:
+            name: tsn-26bc5hg2gb
+            optional: false
+        image: ghcr.io/lcogt/mop/mop:5.1.4-1-ga40bbe9@sha256:3efba763862c611af2f4e7e6e9ce4c1e69754059c6f3efbad7f530d65e203878
+        name: apply-db-migrations
+        resources:
+          limits:
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+          readOnly: false
+        - mountPath: /.specutils
+          name: specutils
+          readOnly: false
+        - mountPath: /.astropy
+          name: astropy
+          readOnly: false
+      - command:
+        - python
+        - manage.py
+        - collectstatic
+        - --no-input
+        env:
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: db-g5td8dg95b
+              optional: false
+        envFrom:
+        - configMapRef:
+            name: env-d796tf9g54
+            optional: false
+        - secretRef:
+            name: aws-5kbh8hk29t
+            optional: false
+        - secretRef:
+            name: antares-64cbg75k7g
+            optional: false
+        - secretRef:
+            name: atlas-8f9dbb42kh
+            optional: false
+        - secretRef:
+            name: django-td6dm2tb4k
+            optional: false
+        - secretRef:
+            name: gemini-b754mtghd8
+            optional: false
+        - secretRef:
+            name: isra-cb2dfdc848
+            optional: false
+        - secretRef:
+            name: lco-7bb8hbdkh2
+            optional: false
+        - secretRef:
+            name: tsn-26bc5hg2gb
+            optional: false
+        image: ghcr.io/lcogt/mop/mop:5.1.4-1-ga40bbe9@sha256:3efba763862c611af2f4e7e6e9ce4c1e69754059c6f3efbad7f530d65e203878
+        name: django-collectstatic
+        resources:
+          limits:
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+          readOnly: false
+        - mountPath: /.specutils
+          name: specutils
+          readOnly: false
+        - mountPath: /.astropy
+          name: astropy
+          readOnly: false
+        - mountPath: /static
+          name: static
+          readOnly: false
       - command:
         - sh
         - -c
@@ -225,129 +358,6 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: tmp
-          readOnly: false
-      - command:
-        - python
-        - manage.py
-        - migrate
-        - --no-input
-        env:
-        - name: DB_PASS
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: db-g5td8dg95b
-              optional: false
-        envFrom:
-        - configMapRef:
-            name: env-d796tf9g54
-            optional: false
-        - secretRef:
-            name: aws-5kbh8hk29t
-            optional: false
-        - secretRef:
-            name: antares-64cbg75k7g
-            optional: false
-        - secretRef:
-            name: atlas-8f9dbb42kh
-            optional: false
-        - secretRef:
-            name: django-td6dm2tb4k
-            optional: false
-        - secretRef:
-            name: gemini-b754mtghd8
-            optional: false
-        - secretRef:
-            name: isra-cb2dfdc848
-            optional: false
-        - secretRef:
-            name: lco-7bb8hbdkh2
-            optional: false
-        - secretRef:
-            name: tsn-26bc5hg2gb
-            optional: false
-        image: ghcr.io/lcogt/mop/mop:5.1.4-1-ga40bbe9@sha256:3efba763862c611af2f4e7e6e9ce4c1e69754059c6f3efbad7f530d65e203878
-        name: apply-db-migrations
-        securityContext:
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsGroup: 1000
-          runAsNonRoot: true
-          runAsUser: 1000
-        volumeMounts:
-        - mountPath: /tmp
-          name: tmp
-          readOnly: false
-        - mountPath: /.specutils
-          name: specutils
-          readOnly: false
-        - mountPath: /.astropy
-          name: astropy
-          readOnly: false
-      - command:
-        - python
-        - manage.py
-        - collectstatic
-        - --no-input
-        env:
-        - name: DB_PASS
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: db-g5td8dg95b
-              optional: false
-        envFrom:
-        - configMapRef:
-            name: env-d796tf9g54
-            optional: false
-        - secretRef:
-            name: aws-5kbh8hk29t
-            optional: false
-        - secretRef:
-            name: antares-64cbg75k7g
-            optional: false
-        - secretRef:
-            name: atlas-8f9dbb42kh
-            optional: false
-        - secretRef:
-            name: django-td6dm2tb4k
-            optional: false
-        - secretRef:
-            name: gemini-b754mtghd8
-            optional: false
-        - secretRef:
-            name: isra-cb2dfdc848
-            optional: false
-        - secretRef:
-            name: lco-7bb8hbdkh2
-            optional: false
-        - secretRef:
-            name: tsn-26bc5hg2gb
-            optional: false
-        image: ghcr.io/lcogt/mop/mop:5.1.4-1-ga40bbe9@sha256:3efba763862c611af2f4e7e6e9ce4c1e69754059c6f3efbad7f530d65e203878
-        name: django-collectstatic
-        securityContext:
-          capabilities:
-            drop:
-            - ALL
-          readOnlyRootFilesystem: true
-          runAsGroup: 1000
-          runAsNonRoot: true
-          runAsUser: 1000
-        volumeMounts:
-        - mountPath: /tmp
-          name: tmp
-          readOnly: false
-        - mountPath: /.specutils
-          name: specutils
-          readOnly: false
-        - mountPath: /.astropy
-          name: astropy
-          readOnly: false
-        - mountPath: /static
-          name: static
           readOnly: false
       securityContext:
         fsGroup: 1000

@@ -77,3 +77,30 @@ patches:
         name: ignored
       spec:
         suspend: true
+
+  - target:
+      kind: Deployment
+      name: server
+    patch: |-
+      apiVersion: ignored
+      kind: Deployment
+      metadata:
+        name: server
+      spec:
+        template:
+          spec:
+            initContainers:
+              - name: apply-db-migrations
+                resources:
+                  limits:
+                    memory: 2Gi
+              - name: django-collectstatic
+                resources:
+                  limits:
+                    memory: 2Gi
+            containers:
+              - name: default
+                resources:
+                  request:
+                    cpu: 200m
+                    memory: 512Mi
