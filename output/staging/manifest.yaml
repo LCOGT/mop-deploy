@@ -326,6 +326,7 @@ spec:
             name: tmp
   schedule: 30 2,6,10,14,18,22 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -398,6 +399,7 @@ spec:
             name: tmp
   schedule: 30 14 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -469,6 +471,7 @@ spec:
             name: tmp
   schedule: 0 12 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -541,6 +544,7 @@ spec:
             name: tmp
   schedule: 0 11 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -613,6 +617,7 @@ spec:
             name: tmp
   schedule: 0 12 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -686,6 +691,7 @@ spec:
             name: tmp
   schedule: 30 1,7,13,19 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -758,6 +764,7 @@ spec:
             name: tmp
   schedule: 15 12 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -831,6 +838,7 @@ spec:
             name: tmp
   schedule: 0 */4 * * *
   startingDeadlineSeconds: 120
+  suspend: true
 ---
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret

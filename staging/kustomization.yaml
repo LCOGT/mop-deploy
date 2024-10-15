@@ -12,3 +12,14 @@ resources:
   - ./sealedsecrets/
 
 namespace: staging-mop
+
+patches:
+  - target:
+      kind: CronJob
+    patch: |-
+      apiVersion: ignored
+      kind: CronJob
+      metadata:
+        name: ignored
+      spec:
+        suspend: true
