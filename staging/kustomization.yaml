@@ -91,6 +91,7 @@ patches:
         template:
           spec:
             initContainers:
+              - name: check-db-ready
               - name: apply-db-migrations
                 resources:
                   limits:
