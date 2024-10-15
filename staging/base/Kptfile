@@ -7,12 +7,12 @@ upstream:
   git:
     repo: https://github.com/LCOGT/mop
     directory: /k8s/base
-    ref: feat/skaffold
+    ref: a40bbe9f613605514beadfbac857eae7976e1fb6
   updateStrategy: resource-merge
 upstreamLock:
   type: git
   git:
     repo: https://github.com/LCOGT/mop
     directory: /k8s/base
-    ref: feat/skaffold
+    ref: a40bbe9f613605514beadfbac857eae7976e1fb6
     commit: a40bbe9f613605514beadfbac857eae7976e1fb6

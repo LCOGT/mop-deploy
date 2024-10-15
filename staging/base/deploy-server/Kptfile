@@ -17,7 +17,7 @@ upstreamLock:
     repo: https://github.com/LCOGT/kpt-pkg-catalog
     directory: /deployment
     ref: main
-    commit: 44eff6a4abed9b954b7bf4ac5c62c0900013b091
+    commit: d34912cfbd70edc730eb7fc5e7711683f2227509
 pipeline:
   mutators:
     - image: gcr.io/kpt-fn/apply-replacements:v0.1.1
