@@ -23,3 +23,87 @@ patches:
         name: ignored
       spec:
         suspend: true
+
+  - target:
+      kind: CronJob
+    patch: |-
+      apiVersion: ignored
+      kind: CronJob
+      metadata:
+        name: ignored
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: default
+                    envFrom:
+                      - configMapRef:
+                          name: env
+                          optional: false
+                      - secretRef:
+                          name: aws
+                          optional: false
+                      - secretRef:
+                          name: antares
+                          optional: false
+                      - secretRef:
+                          name: atlas
+                          optional: false
+                      - secretRef:
+                          name: django
+                          optional: false
+                      - secretRef:
+                          name: gemini
+                          optional: false
+                      - secretRef:
+                          name: isra
+                          optional: false
+                      - secretRef:
+                          name: lco
+                          optional: false
+                      - secretRef:
+                          name: tsn
+                          optional: false
+
+  - target:
+      kind: Deployment
+    patch: |-
+      apiVersion: ignored
+      kind: Deployment
+      metadata:
+        name: ignored
+      spec:
+        template:
+          spec:
+            containers:
+              - name: default
+                envFrom:
+                  - configMapRef:
+                      name: env
+                      optional: false
+                  - secretRef:
+                      name: aws
+                      optional: false
+                  - secretRef:
+                      name: antares
+                      optional: false
+                  - secretRef:
+                      name: atlas
+                      optional: false
+                  - secretRef:
+                      name: django
+                      optional: false
+                  - secretRef:
+                      name: gemini
+                      optional: false
+                  - secretRef:
+                      name: isra
+                      optional: false
+                  - secretRef:
+                      name: lco
+                      optional: false
+                  - secretRef:
+                      name: tsn
+                      optional: false
