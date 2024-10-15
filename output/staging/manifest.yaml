@@ -5,7 +5,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  DB_HOST: db.staging-mop.svc
+  DB_HOST: db-rw.staging-mop.svc
   DB_NAME: mop
   DB_PORT: "5432"
   DB_USER: mop
@@ -13,7 +13,7 @@ data:
   XDG_HOME: /tmp
 kind: ConfigMap
 metadata:
-  name: env-kchd9bk597
+  name: env-d796tf9g54
   namespace: staging-mop
 ---
 apiVersion: v1
@@ -91,7 +91,7 @@ spec:
               optional: false
         envFrom:
         - configMapRef:
-            name: env-kchd9bk597
+            name: env-d796tf9g54
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -158,25 +158,25 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: DB_HOST
-              name: env-kchd9bk597
+              name: env-d796tf9g54
               optional: false
         - name: PGDATABASE
           valueFrom:
             configMapKeyRef:
               key: DB_NAME
-              name: env-kchd9bk597
+              name: env-d796tf9g54
               optional: false
         - name: PGUSER
           valueFrom:
             configMapKeyRef:
               key: DB_USER
-              name: env-kchd9bk597
+              name: env-d796tf9g54
               optional: false
         - name: PGPORT
           valueFrom:
             configMapKeyRef:
               key: DB_PORT
-              name: env-kchd9bk597
+              name: env-d796tf9g54
               optional: false
         - name: DB_PASS
           valueFrom:
@@ -186,7 +186,7 @@ spec:
               optional: false
         envFrom:
         - configMapRef:
-            name: env-kchd9bk597
+            name: env-d796tf9g54
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -240,7 +240,7 @@ spec:
               optional: false
         envFrom:
         - configMapRef:
-            name: env-kchd9bk597
+            name: env-d796tf9g54
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -300,7 +300,7 @@ spec:
               optional: false
         envFrom:
         - configMapRef:
-            name: env-kchd9bk597
+            name: env-d796tf9g54
             optional: false
         - secretRef:
             name: aws-5kbh8hk29t
@@ -423,7 +423,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -524,7 +524,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -624,7 +624,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -725,7 +725,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -826,7 +826,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -928,7 +928,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -1029,7 +1029,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
@@ -1131,7 +1131,7 @@ spec:
                   optional: false
             envFrom:
             - configMapRef:
-                name: env-kchd9bk597
+                name: env-d796tf9g54
                 optional: false
             - secretRef:
                 name: aws-5kbh8hk29t
