@@ -6,7 +6,7 @@ metadata: # kpt-merge: /set-lco-karpenter-attrs
     config.kubernetes.io/local-config: "true"
     config.kubernetes.io/function: |
       container:
-        image: gcr.io/kpt-fn/starlark:v0.5.0
+        image: ghcr.io/kptdev/krm-functions-catalog/starlark:v0.5.0
     internal.kpt.dev/upstream-identifier: 'fn.kpt.dev|StarlarkRun|default|set-lco-karpenter-attrs'
 params:
   provisioner: dev
