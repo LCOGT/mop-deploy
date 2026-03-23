@@ -7,12 +7,12 @@ upstream:
   git:
     repo: https://github.com/LCOGT/mop
     directory: /k8s/base
-    ref: c38ecaf430c6c97f700358030cc507d830aa4b58
+    ref: c33826d2c470be7454195132100a5a30189a62dd
   updateStrategy: resource-merge
 upstreamLock:
   type: git
   git:
     repo: https://github.com/LCOGT/mop
     directory: /k8s/base
-    ref: c38ecaf430c6c97f700358030cc507d830aa4b58
-    commit: c38ecaf430c6c97f700358030cc507d830aa4b58
+    ref: c33826d2c470be7454195132100a5a30189a62dd
+    commit: c33826d2c470be7454195132100a5a30189a62dd
