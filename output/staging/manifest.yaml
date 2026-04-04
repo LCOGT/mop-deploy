@@ -118,7 +118,7 @@ spec:
         - secretRef:
             name: tsn-26bc5hg2gb
             optional: false
-        image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+        image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
         name: default
         ports:
         - containerPort: 8080
@@ -274,7 +274,7 @@ spec:
         - secretRef:
             name: tsn-26bc5hg2gb
             optional: false
-        image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+        image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
         name: apply-db-migrations
         resources:
           limits:
@@ -337,7 +337,7 @@ spec:
         - secretRef:
             name: tsn-26bc5hg2gb
             optional: false
-        image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+        image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
         name: django-collectstatic
         resources:
           limits:
@@ -463,7 +463,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
@@ -564,7 +564,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
@@ -664,7 +664,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
@@ -765,7 +765,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
@@ -866,7 +866,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
@@ -968,7 +968,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
@@ -1069,7 +1069,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
@@ -1171,7 +1171,7 @@ spec:
             - secretRef:
                 name: tsn-26bc5hg2gb
                 optional: false
-            image: ghcr.io/lcogt/mop/mop:5.3.5.2-1-gf0f5c59@sha256:2035e3eafe99ab8ea328367821927c94236377368455d707e89dc9b0b549b400
+            image: ghcr.io/lcogt/mop/mop:5.3.5.3-1-gb1babe6@sha256:72aab1db6094bf089056fb733bae5b74d08c8a76b94b0f86cba162f8bea27e82
             name: default
             securityContext:
               capabilities:
