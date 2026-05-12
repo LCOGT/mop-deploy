@@ -5,7 +5,7 @@ apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 
 images:
-- digest: sha256:44fd6e244039fb190ab9459e7b074a1f7b73f4b5bbc7735ca97ba04633c33b97
+- digest: sha256:1005706f6dacf72e7352af85f6bfa8e624096b89ef99d80d85b44a210ad07214
   name: mop
   newName: ghcr.io/lcogt/mop/mop
-  newTag: 5.3.9-2-g9c408d0
+  newTag: 5.3.9-17-ga77116f
